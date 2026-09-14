@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediTrack Ultra - Clinical Hospital System</title>
+  <style>
+    :root {
+      --bg: #0b132b;
+      --card-bg: #1c2541;
+      --card-alt: #243256;
+      --primary: #48cae4;
+      --accent: #00f5d4;
+      --warning: #ffb703;
+      --danger: #ef476f;
+      --success: #06d6a0;
+      --staff-accent: #b5179e;
+      --token-accent: #7209b7;
+      --text: #ffffff;
+      --text-muted: #90e0ef;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+    header {
+      background: #080e21; border-bottom: 2px solid var(--primary);
+      padding: 12px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+      position: sticky; top: 0; z-index: 100;
+    }
+
+    .brand { font-size: 1.3rem; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+
+    .nav-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .nav-btn {
+      background: #111d3d; border: 1px solid var(--border); color: #fff;
+      padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+    }
+    .nav-btn.active { background: var(--primary); color: #050a14; }
+    .nav-btn.pharma-tab.active { background: var(--warning); color: #050a14; }
+    .nav-btn.patient-tab.active { background: var(--accent); color: #050a14; }
+    .nav-btn.staff-tab.active { background: var(--staff-accent); color: #fff; }
+    .nav-btn.token-tab.active { background: var(--token-accent); color: #fff; }
+
+    .top-stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;
+      max-width: 1200px; margin: 15px auto; padding: 0 15px;
+    }
+    .stat-box {
+      background: var(--card-bg); border-radius: 8px; padding: 12px;
+      border-left: 4px solid var(--primary); text-align: center;
+    }
+    .stat-box.warn { border-left-color: var(--warning); }
+    .stat-box.crit { border-left-color: var(--danger); }
+    .stat-box.succ { border-left-color: var(--success); }
+    .stat-box.staff { border-left-color: var(--staff-accent); }
+    .stat-box.token { border-left-color: var(--token-accent); }
+    .stat-box span { font-size: 0.75rem; color: var(--text-muted); display: block; }
+    .stat-box strong { font-size: 1.4rem; font-weight: 800; }
+
+    .main-wrap { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+
+    .grid-duo { display: grid; grid-template-columns: 360px 1fr; gap: 15px; }
+    @media (max-width: 850px) { .grid-duo { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px;
+    }
+    .panel h3 { font-size: 1.05rem; color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+    .field { margin-bottom: 10px; text-align: left; }
+    .field label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 600; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 8px 10px; background: #0c1429; border: 1px solid var(--border);
+      color: #fff; border-radius: 6px; font-size: 0.88rem; outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); }
+    .row2 { display: flex; gap: 8px; }
+    .row2 .field { flex: 1; }
+
+    .btn-main {
+      width: 100%; padding: 10px; background: var(--primary); color: #050a14;
+      border: none; border-radius: 6px; font-weight: 700; cursor: pointer; margin-top: 5px; font-size: 0.9rem;
+    }
+    .btn-main:hover { filter: brightness(1.15); }
+
+    .search-box {
+      width: 100%; padding: 9px 12px; background: #0c1429; border: 1px solid var(--border);
+      color: #fff; border-radius: 6px; font-size: 0.9rem; margin-bottom: 12px;
+    }
+
+    .cards-list { display: flex; flex-direction: column; gap: 12px; max-height: 650px; overflow-y: auto; padding-right: 4px; }
+    .pat-card {
+      background: var(--card-alt); border-radius: 8px; padding: 14px;
+      border-left: 4px solid var(--primary); position: relative;
+    }
+    .pat-card.Critical { border-left-color: var(--danger); }
+    .pat-card.Recovered { border-left-color: var(--success); }
+
+    .pat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .pat-head h4 { font-size: 1.05rem; }
+    .badge-status { font-size: 0.7rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; background: #111d3d; }
+
+    .staff-badge-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; font-size: 0.82rem;
+    }
+    .staff-tag {
+      background: rgba(181, 23, 158, 0.2); border: 1px solid var(--staff-accent);
+      padding: 3px 8px; border-radius: 4px; color: #fff;
+    }
+
+    .vitals-row {
+      display: flex; gap: 10px; flex-wrap: wrap; background: #0c1429;
+      padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; margin: 6px 0;
+    }
+    .vitals-row span { color: var(--text-muted); }
+    .vitals-row strong { color: #fff; }
+
+    .rx-box {
+      background: rgba(0, 245, 212, 0.08); border: 1px dashed var(--accent);
+      border-radius: 6px; padding: 8px 10px; margin: 8px 0; font-size: 0.85rem;
+    }
+    .rx-box pre { white-space: pre-line; font-family: inherit; margin-top: 4px; color: #fff; font-size: 0.85rem; }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .btn-sub {
+      background: #111d3d; border: 1px solid var(--border); color: #fff;
+      padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: 600;
+    }
+    .btn-sub:hover { filter: brightness(1.2); }
+    .btn-sub.rx { border-color: var(--accent); color: var(--accent); }
+    .btn-sub.pay { border-color: var(--warning); color: var(--warning); }
+    .btn-sub.del { position: absolute; top: 12px; right: 12px; background: none; border: none; color: var(--danger); font-size: 0.85rem; }
+
+    .inline-rx-form {
+      display: none; background: #0c1429; border: 1px solid var(--primary);
+      border-radius: 6px; padding: 10px; margin: 8px 0;
+    }
+
+    .staff-table {
+      width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem;
+    }
+    .staff-table th, .staff-table td {
+      border: 1px solid var(--border); padding: 8px 10px; text-align: left;
+    }
+    .staff-table th { background: #111d3d; color: var(--primary); }
+
+    .qr-modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 15px;
+    }
+    .qr-box {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; max-width: 380px; width: 100%; text-align: center;
+    }
+
+    /* Token System Styles */
+    .token-card {
+      background: #0f1c3f; border: 1px solid var(--token-accent);
+      border-radius: 8px; padding: 15px; margin-bottom: 12px;
+    }
+    .token-badge {
+      font-size: 1.4rem; font-weight: 800; color: var(--accent);
+      background: rgba(0, 245, 212, 0.1); padding: 4px 12px; border-radius: 6px; display: inline-block;
+    }
+    .queue-counter {
+      background: rgba(255, 183, 3, 0.15); border: 1px solid var(--warning);
+      color: var(--warning); padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; margin: 8px 0;
+    }
+    .doc-schedule-card {
+      background: var(--card-alt); border-radius: 8px; padding: 12px; margin-bottom: 10px; border-left: 4px solid var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">🩺 MediTrack Ultra</div>
+    <div class="nav-tabs">
+      <button type="button" class="nav-btn active" id="tWard" onclick="setScreen('ward')">Ward View</button>
+      <button type="button" class="nav-btn pharma-tab" id="tPharma" onclick="setScreen('pharma')">Pharmacy Queue (<span id="cPharmaQueue">0</span>)</button>
+      <button type="button" class="nav-btn token-tab" id="tToken" onclick="setScreen('token')">OP Token Booking (<span id="cActiveTokens">0</span>)</button>
+      <button type="button" class="nav-btn patient-tab" id="tPatient" onclick="setScreen('patient')">Patient Bill Pay</button>
+      <button type="button" class="nav-btn staff-tab" id="tStaff" onclick="setScreen('staff')">Doctor & Nurse Roster</button>
+    </div>
+  </header>
+
+  <!-- Metrics Counters -->
+  <div class="top-stats">
+    <div class="stat-box"><span>Total Patients</span><strong id="mTotal">0</strong></div>
+    <div class="stat-box warn"><span>Active Treatment</span><strong id="mActive">0</strong></div>
+    <div class="stat-box token"><span>Waiting OP Tokens</span><strong id="mTokens">0</strong></div>
+    <div class="stat-box crit"><span>Critical Priority</span><strong id="mCrit">0</strong></div>
+    <div class="stat-box succ"><span>Discharged</span><strong id="mDisc">0</strong></div>
+    <div class="stat-box staff"><span>Staff on Duty</span><strong id="mStaff">0</strong></div>
+  </div>
+
+  <div class="main-wrap">
+    <!-- 1. WARD VIEW -->
+    <div id="viewWard" class="grid-duo">
+      <div class="panel">
+        <h3>+ New Patient Admission</h3>
+        <form onsubmit="admitPatient(event)">
+          <div class="field">
+            <label>Patient Full Name *</label>
+            <input type="text" id="pName" required placeholder="Patient name">
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Age *</label>
+              <input type="number" id="pAge" required placeholder="Years">
+            </div>
+            <div class="field">
+              <label>Gender</label>
+              <select id="pGen">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Phone *</label>
+              <input type="tel" id="pPhone" required placeholder="10-digit number">
+            </div>
+            <div class="field">
+              <label>Bed / Ward *</label>
+              <input type="text" id="pBed" required placeholder="e.g. ICU-01 or Ward-4">
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Attending Doctor *</label>
+              <select id="pDocSelect"></select>
+            </div>
+            <div class="field">
+              <label>Assigned Nurse *</label>
+              <select id="pNurSelect"></select>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>BP</label>
+              <input type="text" id="vBp" placeholder="120/80">
+            </div>
+            <div class="field">
+              <label>Pulse</label>
+              <input type="number" id="vPulse" placeholder="78">
+            </div>
+            <div class="field">
+              <label>SpO2</label>
+              <input type="number" id="vSpo2" placeholder="98">
+            </div>
+          </div>
+          <div class="field">
+            <label>Diagnosis / Complaint *</label>
+            <input type="text" id="pDiag" required placeholder="e.g. Hypertension, Pneumonia">
+          </div>
+          <div class="field">
+            <label>Prescribed Medicines (Sent to Pharmacy) *</label>
+            <textarea id="pRx" required placeholder="e.g. Tab Paracetamol 650mg TDS (After food)&#10;Tab Pantoprazole 40mg (Morning)"></textarea>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Status</label>
+              <select id="pStat">
+                <option value="Ongoing">Under Treatment</option>
+                <option value="Critical">Critical</option>
+                <option value="Recovered">Recovered</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Hospital Bill (₹)</label>
+              <input type="number" id="pBill" value="1500">
+            </div>
+          </div>
+          <button type="submit" class="btn-main">Admit & Send to Pharmacy</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Clinical Ward Records</h3>
+        <input type="text" class="search-box" id="inpSearch" placeholder="🔍 Search patient name, bed, doctor, nurse..." oninput="doSearch()">
+        <div id="wardCards" class="cards-list"></div>
+      </div>
+    </div>
+
+    <!-- 2. PHARMACY VIEW -->
+    <div id="viewPharma" style="display: none;">
+      <div class="panel">
+        <h3 style="color: var(--warning);">Ground Floor Pharmacy Dispense Queue</h3>
+        <input type="text" class="search-box" id="pharmaSearch" placeholder="🔍 Pharmacist: Search patient, bed or doctor..." oninput="renderPharmaQueue()">
+        <div id="pharmaCards" class="cards-list"></div>
+      </div>
+    </div>
+
+    <!-- 3. ONLINE OP TOKEN BOOKING VIEW -->
+    <div id="viewToken" style="display: none;">
+      <div class="grid-duo">
+        <!-- Token Booking Form -->
+        <div class="panel">
+          <h3 style="color: var(--accent);">🎟️ Book Outpatient (OP) Token</h3>
+          <form onsubmit="bookOpToken(event)">
+            <div class="field">
+              <label>Select Doctor & Timing *</label>
+              <select id="tokDocSelect" onchange="updateDocAvailabilityBadge()"></select>
+            </div>
+            <div id="docAvailBadge" style="font-size:0.8rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; background:#0c1429; color:var(--accent);"></div>
+
+            <div class="field">
+              <label>Patient Full Name *</label>
+              <input type="text" id="tokName" required placeholder="Enter patient name">
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>Age *</label>
+                <input type="number" id="tokAge" required placeholder="Years">
+              </div>
+              <div class="field">
+                <label>Gender</label>
+                <select id="tokGen">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>WhatsApp / Mobile Number *</label>
+              <input type="tel" id="tokPhone" required placeholder="10-digit mobile number">
+            </div>
+            <div class="field">
+              <label>Reason for Visit / Problem</label>
+              <input type="text" id="tokReason" placeholder="e.g. Fever, Chest Discomfort, Knee Pain">
+            </div>
+            <button type="submit" class="btn-main" style="background: var(--token-accent); color: #fff;">Get OP Token Now</button>
+          </form>
+        </div>
+
+        <!-- Live Queue Status & Token Management -->
+        <div class="panel">
+          <h3 style="color: var(--accent);">Live OP Waiting Queue & Timings</h3>
+          <div id="liveQueueDisplay" class="cards-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. PATIENT PORTAL VIEW -->
+    <div id="viewPatient" style="display: none;">
+      <div class="panel" style="max-width: 700px; margin: 0 auto;">
+        <h3 style="color: var(--accent); text-align: center;">Patient Online Bill & Prescription Portal</h3>
+        <div class="row2" style="margin-bottom: 15px;">
+          <input type="text" id="patLookup" class="search-box" style="margin-bottom:0;" placeholder="Enter Patient Phone or Name">
+          <button type="button" class="btn-main" style="width: 140px; margin-top:0;" onclick="findPatientBill()">View Bill</button>
+        </div>
+        <div id="patientResult"></div>
+      </div>
+    </div>
+
+    <!-- 5. DOCTORS & NURSES ROSTER VIEW -->
+    <div id="viewStaff" style="display: none;">
+      <div class="grid-duo">
+        <div class="panel">
+          <h3 style="color: var(--staff-accent);">+ Add Medical Staff & Schedule</h3>
+          <form onsubmit="addStaffMember(event)">
+            <div class="field">
+              <label>Staff Role *</label>
+              <select id="stRole">
+                <option value="Doctor">Doctor (Consultant / Specialist)</option>
+                <option value="Nurse">Nurse (Staff / Floor Duty)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Staff Full Name *</label>
+              <input type="text" id="stName" required placeholder="e.g. Dr. Rajesh Kumar or Nurse Kavya">
+            </div>
+            <div class="field">
+              <label>Department / Specialty *</label>
+              <input type="text" id="stDept" required placeholder="e.g. Cardiology, ICU, Pediatrics">
+            </div>
+            <div class="field">
+              <label>Available Timings / OP Hours *</label>
+              <input type="text" id="stTiming" required placeholder="e.g. 09:00 AM - 01:00 PM & 05:00 PM - 08:00 PM">
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>Current Status</label>
+                <select id="stStatus">
+                  <option value="In Clinic">In Clinic (Available Now)</option>
+                  <option value="In Surgery">In Surgery</option>
+                  <option value="Off Duty">Off Duty</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Contact Phone</label>
+                <input type="tel" id="stPhone" placeholder="Mobile number">
+              </div>
+            </div>
+            <button type="submit" class="btn-main" style="background: var(--staff-accent); color: #fff;">Register Staff</button>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3 style="color: var(--staff-accent);">Doctor Timings & Staff Directory</h3>
+          <div style="overflow-x: auto;">
+            <table class="staff-table">
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Name</th>
+                  <th>Department</th>
+                  <th>Available Timings</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="staffTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Payment Modal -->
+  <div class="qr-modal" id="qrModal">
+    <div class="qr-box">
+      <h3 style="color: var(--warning); margin-bottom: 6px;">Hospital Bill UPI Payment</h3>
+      <p id="qrPatName" style="font-size:0.85rem; color:var(--text-muted);"></p>
+      <h2 id="qrAmount" style="font-size: 1.8rem; margin: 10px 0; color:#fff;">₹0</h2>
+      <img id="qrImg" src="" alt="UPI QR" style="width: 180px; height: 180px; margin: 8px auto; display: block; background: #fff; padding: 8px; border-radius: 8px;">
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Scan with GPay, PhonePe, Paytm or any UPI App</p>
+      <div class="row2">
+        <button type="button" class="btn-main" style="background: var(--success);" onclick="confirmPaymentDone()">I Have Paid</button>
+        <button type="button" class="btn-main" style="background: #334155; color: #fff;" onclick="closePaymentModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initial Staff Directory with Available Timings
+    const seedStaff = [
+      { id: 1, role: "Doctor", name: "Dr. Arvind", dept: "Cardiology", timing: "09:00 AM - 01:00 PM & 05:00 PM - 08:00 PM", status: "In Clinic", phone: "9841023456" },
+      { id: 2, role: "Doctor", name: "Dr. Priya", dept: "General Medicine", timing: "10:00 AM - 02:00 PM", status: "In Clinic", phone: "9841056789" },
+      { id: 3, role: "Doctor", name: "Dr. Suresh", dept: "Orthopedics", timing: "02:00 PM - 06:00 PM", status: "In Clinic", phone: "9841098765" },
+      { id: 4, role: "Nurse", name: "Nurse Saranya", dept: "Ward 3", timing: "Day Shift (08:00 AM - 04:00 PM)", status: "In Clinic", phone: "9789012345" },
+      { id: 5, role: "Nurse", name: "Nurse Anita", dept: "ICU Floor 2", timing: "Night Shift (12:00 AM - 08:00 AM)", status: "In Clinic", phone: "9789054321" },
+      { id: 6, role: "Nurse", name: "Nurse Malar", dept: "Post-Op Ward", timing: "Evening Shift (04:00 PM - 12:00 AM)", status: "In Clinic", phone: "9789067890" }
+    ];
+
+    // Initial Patient Records
+    const seedPatients = [
+      {
+        id: 101,
+        name: "Kavitha Raj",
+        age: 42,
+        gender: "Female",
+        phone: "9876501234",
+        bed: "Ward 3 - Bed 08",
+        doctor: "Dr. Arvind (Cardiology)",
+        nurse: "Nurse Saranya (Ward 3)",
+        bp: "130/85",
+        pulse: "76",
+        spo2: "98%",
+        diag: "Type 2 Diabetes Mellitus",
+        rx: "Tab Metformin 500mg (1-0-1 After food)\nTab Glimepiride 1mg (1-0-0 Before food)",
+        status: "Ongoing",
+        bill: 1850,
+        billPaid: false,
+        pharmaDispensed: false
+      },
+      {
+        id: 102,
+        name: "Murugan S",
+        age: 58,
+        gender: "Male",
+        phone: "9840123456",
+        bed: "Floor 2 - ICU 02",
+        doctor: "Dr. Arvind (Cardiology)",
+        nurse: "Nurse Anita (ICU Floor 2)",
+        bp: "175/115",
+        pulse: "108",
+        spo2: "93%",
+        diag: "Acute Angina & High BP",
+        rx: "Inj Nitroglycerin IV Infusion\nTab Amlodipine 5mg (1-0-0)",
+        status: "Critical",
+        bill: 5600,
+        billPaid: false,
+        pharmaDispensed: false
+      },
+      {
+        id: 103,
+        name: "Aakash V",
+        age: 24,
+        gender: "Male",
+        phone: "9123456780",
+        bed: "Discharged",
+        doctor: "Dr. Suresh (Orthopedics)",
+        nurse: "Nurse Malar (Post-Op Ward)",
+        bp: "118/78",
+        pulse: "72",
+        spo2: "99%",
+        diag: "Post Appendectomy",
+        rx: "Tab Cefixime 200mg (1-0-1)\nTab Paracetamol 650mg (SOS)",
+        status: "Recovered",
+        bill: 12400,
+        billPaid: true,
+        pharmaDispensed: true
+      }
+    ];
+
+    // Initial OP Tokens
+    const seedTokens = [
+      { id: 201, tokenNo: "OP-101", doctor: "Dr. Arvind (Cardiology)", name: "Selvam M", age: 48, gender: "Male", phone: "9898012345", reason: "Chest tightness", time: "10:15 AM", status: "Waiting" },
+      { id: 202, tokenNo: "OP-102", doctor: "Dr. Arvind (Cardiology)", name: "Radha V", age: 36, gender: "Female", phone: "9898067890", reason: "BP checkup", time: "10:30 AM", status: "Waiting" },
+      { id: 203, tokenNo: "OP-103", doctor: "Dr. Priya (General Medicine)", name: "Deepak S", age: 29, gender: "Male", phone: "9898034567", reason: "Viral fever", time: "10:45 AM", status: "Waiting" }
+    ];
+
+    let patientStore = [];
+    let staffStore = [];
+    let tokenStore = [];
+    let payingPatientId = null;
+
+    function initStore() {
+      try {
+        const storedPat = localStorage.getItem("meditrack_ultra_pat_v3");
+        patientStore = storedPat ? JSON.parse(storedPat) : seedPatients.slice();
+
+        const storedStaff = localStorage.getItem("meditrack_ultra_staff_v3");
+        staffStore = storedStaff ? JSON.parse(storedStaff) : seedStaff.slice();
+
+        const storedTokens = localStorage.getItem("meditrack_ultra_tokens_v3");
+        tokenStore = storedTokens ? JSON.parse(storedTokens) : seedTokens.slice();
+      } catch (e) {
+        patientStore = seedPatients.slice();
+        staffStore = seedStaff.slice();
+        tokenStore = seedTokens.slice();
+      }
+      saveAll();
+    }
+
+    function saveAll() {
+      localStorage.setItem("meditrack_ultra_pat_v3", JSON.stringify(patientStore));
+      localStorage.setItem("meditrack_ultra_staff_v3", JSON.stringify(staffStore));
+      localStorage.setItem("meditrack_ultra_tokens_v3", JSON.stringify(tokenStore));
+      populateDropdowns();
+      renderDashboard();
+    }
+
+    function populateDropdowns() {
+      const docSelect = document.getElementById("pDocSelect");
+      const nurSelect = document.getElementById("pNurSelect");
+      const tokDocSelect = document.getElementById("tokDocSelect");
+
+      const doctors = staffStore.filter(s => s.role === "Doctor");
+      const nurses = staffStore.filter(s => s.role === "Nurse");
+
+      if (docSelect) docSelect.innerHTML = doctors.map(d => `<option value="${d.name} (${d.dept})">${d.name} - ${d.dept}</option>`).join("");
+      if (nurSelect) nurSelect.innerHTML = nurses.map(n => `<option value="${n.name} (${n.dept})">${n.name} - ${n.dept}</option>`).join("");
+      if (tokDocSelect) {
+        tokDocSelect.innerHTML = doctors.map(d => `<option value="${d.name} (${d.dept})">${d.name} (${d.dept}) [${d.timing}]</option>`).join("");
+        updateDocAvailabilityBadge();
+      }
+    }
+
+    function updateDocAvailabilityBadge() {
+      const selected = document.getElementById("tokDocSelect").value;
+      const doc = staffStore.find(s => `${s.name} (${s.dept})` === selected);
+      const badge = document.getElementById("docAvailBadge");
+      if (doc && badge) {
+        const waitingCount = tokenStore.filter(t => t.doctor === selected && t.status === "Waiting").length;
+        badge.innerHTML = `⏱️ <strong>Available:</strong> ${doc.timing} | <strong>Status:</strong> <span style="color:${doc.status === 'In Clinic' ? 'var(--success)' : 'var(--danger)'};">${doc.status}</span> | <strong>Patients Waiting:</strong> ${waitingCount}`;
+      }
+    }
+
+    function setScreen(screen) {
+      document.getElementById("viewWard").style.display = screen === "ward" ? "grid" : "none";
+      document.getElementById("viewPharma").style.display = screen === "pharma" ? "block" : "none";
+      document.getElementById("viewToken").style.display = screen === "token" ? "grid" : "none";
+      document.getElementById("viewPatient").style.display = screen === "patient" ? "block" : "none";
+      document.getElementById("viewStaff").style.display = screen === "staff" ? "block" : "none";
+
+      document.getElementById("tWard").classList.toggle("active", screen === "ward");
+      document.getElementById("tPharma").classList.toggle("active", screen === "pharma");
+      document.getElementById("tToken").classList.toggle("active", screen === "token");
+      document.getElementById("tPatient").classList.toggle("active", screen === "patient");
+      document.getElementById("tStaff").classList.toggle("active", screen === "staff");
+
+      if (screen === "pharma") renderPharmaQueue();
+      if (screen === "token") renderTokenQueue();
+      if (screen === "patient") findPatientBill();
+      if (screen === "staff") renderStaffTable();
+    }
+
+    // Book Online OP Token
+    function bookOpToken(e) {
+      e.preventDefault();
+      const docVal = document.getElementById("tokDocSelect").value;
+      const nextNum = 101 + tokenStore.length;
+      const newTokenNo = "OP-" + nextNum;
+
+      // Count waiting ahead for this specific doctor
+      const aheadCount = tokenStore.filter(t => t.doctor === docVal && t.status === "Waiting").length;
+
+      const newTok = {
+        id: Date.now(),
+        tokenNo: newTokenNo,
+        doctor: docVal,
+        name: document.getElementById("tokName").value.trim(),
+        age: document.getElementById("tokAge").value,
+        gender: document.getElementById("tokGen").value,
+        phone: document.getElementById("tokPhone").value.trim(),
+        reason: document.getElementById("tokReason").value.trim() || "General Consultation",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: "Waiting"
+      };
+
+      tokenStore.push(newTok);
+      saveAll();
+      e.target.reset();
+      updateDocAvailabilityBadge();
+      renderTokenQueue();
+
+      alert(`🎉 OP Token Booked Successfully!\n\nYour Token: ${newTokenNo}\nDoctor: ${docVal}\nPatients Ahead in Queue: ${aheadCount}\nEst. Wait Time: ~${aheadCount * 10} minutes`);
+    }
+
+    function callNextToken(id) {
+      const tok = tokenStore.find(t => t.id === id);
+      if (!tok) return;
+      tok.status = "Consulting";
+      saveAll();
+      renderTokenQueue();
+      alert(`Calling ${tok.tokenNo} - ${tok.name} into Doctor's Cabin!`);
+    }
+
+    function completeToken(id) {
+      const tok = tokenStore.find(t => t.id === id);
+      if (!tok) return;
+      tok.status = "Completed";
+      saveAll();
+      renderTokenQueue();
+    }
+
+    function printTokenSlip(id) {
+      const t = tokenStore.find(x => x.id === id);
+      if (!t) return;
+      const aheadCount = tokenStore.filter(tok => tok.doctor === t.doctor && tok.status === "Waiting" && tok.id < t.id).length;
+      const w = window.open("", "_blank");
+      w.document.write(`
+        <div style="font-family:sans-serif; text-align:center; padding:30px; border:2px dashed #333; max-width:350px; margin:0 auto;">
+          <h2>City Care Hospital</h2>
+          <h3>Outpatient (OP) Token Slip</h3>
+          <div style="font-size:32px; font-weight:bold; margin:15px 0; color:#0284c7;">${t.tokenNo}</div>
+          <p><strong>Patient:</strong> ${t.name} (${t.age}y, ${t.gender})</p>
+          <p><strong>Consultant:</strong> ${t.doctor}</p>
+          <p><strong>Booked Time:</strong> ${t.time}</p>
+          <hr style="margin:15px 0;">
+          <p style="font-size:16px;"><strong>Patients Ahead in Queue:</strong> ${aheadCount}</p>
+          <p style="font-size:12px; color:#666;">Please wait outside the doctor's consultation room until your token is called.</p>
+        </div>
+        <script>window.print();<\/script>
+      `);
+      w.document.close();
+    }
+
+    function renderTokenQueue() {
+      const box = document.getElementById("liveQueueDisplay");
+      if (!box) return;
+
+      const activeList = tokenStore.filter(t => t.status !== "Completed");
+
+      if (activeList.length === 0) {
+        box.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No active OP tokens in queue. Book a new token from the left panel.</div>';
+        return;
+      }
+
+      box.innerHTML = activeList.map((t, index) => {
+        // Compute how many ahead of this patient for the same doctor
+        const ahead = tokenStore.filter(tok => tok.doctor === t.doctor && tok.status === "Waiting" && tok.id < t.id).length;
+        const isCurrent = t.status === "Consulting";
+
+        return `
+          <div class="token-card" style="border-left: 5px solid ${isCurrent ? 'var(--success)' : 'var(--token-accent)'}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="token-badge">${t.tokenNo}</span>
+              <span class="badge-status" style="background:${isCurrent ? 'var(--success)' : 'var(--warning)'}; color:#000;">
+                ${isCurrent ? 'Inside Cabin' : 'Waiting in Queue'}
+              </span>
+            </div>
+
+            <div style="margin-top:8px;">
+              <h4 style="font-size:1.1rem; color:#fff;">${t.name} <span style="font-size:0.8rem; color:var(--text-muted);">(${t.age}y, ${t.gender})</span></h4>
+              <p style="font-size:0.82rem; color:var(--accent);">👨‍⚕️ ${t.doctor}</p>
+              <p style="font-size:0.8rem; color:var(--text-muted);">Problem: ${t.reason} | Phone: ${t.phone}</p>
+            </div>
+
+            <div class="queue-counter">
+              ${isCurrent ? '🟢 Currently consulting with doctor' : `⏳ <strong>${ahead} patients</strong> ahead of this token (~${ahead * 10} mins wait)`}
+            </div>
+
+            <div class="btn-row">
+              ${!isCurrent ? `<button class="btn-sub" style="background:var(--success); color:#000;" onclick="callNextToken(${t.id})">Call Into Cabin</button>` : ''}
+              <button class="btn-sub" style="background:#0284c7; color:#fff;" onclick="completeToken(${t.id})">Consultation Completed</button>
+              <button class="btn-sub" onclick="printTokenSlip(${t.id})">Print Token Slip</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // Ward Functions
+    function admitPatient(e) {
+      e.preventDefault();
+      const newP = {
+        id: Date.now(),
+        name: document.getElementById("pName").value.trim(),
+        age: document.getElementById("pAge").value,
+        gender: document.getElementById("pGen").value,
+        phone: document.getElementById("pPhone").value.trim(),
+        bed: document.getElementById("pBed").value.trim(),
+        doctor: document.getElementById("pDocSelect").value,
+        nurse: document.getElementById("pNurSelect").value,
+        bp: document.getElementById("vBp").value.trim() || "120/80",
+        pulse: document.getElementById("vPulse").value.trim() || "72",
+        spo2: (document.getElementById("vSpo2").value.trim() || "98") + "%",
+        diag: document.getElementById("pDiag").value.trim(),
+        rx: document.getElementById("pRx").value.trim(),
+        status: document.getElementById("pStat").value,
+        bill: parseFloat(document.getElementById("pBill").value) || 0,
+        billPaid: false,
+        pharmaDispensed: false
+      };
+
+      patientStore.unshift(newP);
+      saveAll();
+      e.target.reset();
+      alert("✅ Patient admitted & routed to Pharmacy queue!");
+    }
+
+    function addStaffMember(e) {
+      e.preventDefault();
+      const newStaff = {
+        id: Date.now(),
+        role: document.getElementById("stRole").value,
+        name: document.getElementById("stName").value.trim(),
+        dept: document.getElementById("stDept").value.trim(),
+        timing: document.getElementById("stTiming").value.trim() || "09:00 AM - 05:00 PM",
+        status: document.getElementById("stStatus").value,
+        phone: document.getElementById("stPhone").value.trim() || "N/A"
+      };
+
+      staffStore.push(newStaff);
+      saveAll();
+      e.target.reset();
+      renderStaffTable();
+      alert(`✅ ${newStaff.role} ${newStaff.name} registered with OP timings!`);
+    }
+
+    function deleteStaff(id) {
+      if (confirm("Remove this staff member from directory?")) {
+        staffStore = staffStore.filter(s => s.id !== id);
+        saveAll();
+        renderStaffTable();
+      }
+    }
+
+    function renderStaffTable() {
+      const tbody = document.getElementById("staffTableBody");
+      if (!tbody) return;
+
+      tbody.innerHTML = staffStore.map(s => `
+        <tr>
+          <td><strong style="color:${s.role === 'Doctor' ? 'var(--primary)' : 'var(--accent)'}">${s.role}</strong></td>
+          <td>${s.name}</td>
+          <td>${s.dept}</td>
+          <td><span style="font-size:0.8rem; color:var(--text-muted);">${s.timing}</span></td>
+          <td><span class="badge-status" style="background:${s.status === 'In Clinic' ? 'var(--success)' : 'var(--danger)'}; color:#000;">${s.status}</span></td>
+          <td>
+            <button type="button" class="btn-sub" style="border-color:var(--danger); color:var(--danger); padding:2px 6px;" onclick="deleteStaff(${s.id})">Remove</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function doSearch() {
+      const q = document.getElementById("inpSearch").value.toLowerCase().trim();
+      renderWard(q);
+    }
+
+    function toggleInlineRx(id) {
+      const form = document.getElementById("rxForm-" + id);
+      if (form) {
+        form.style.display = form.style.display === "block" ? "none" : "block";
+      }
+    }
+
+    function saveInlineRx(id) {
+      const p = patientStore.find(x => x.id === id);
+      if (!p) return;
+      const text = document.getElementById("inpRx-" + id).value.trim();
+      if (!text) {
+        alert("Please enter prescription details!");
+        return;
+      }
+      p.rx = text;
+      p.pharmaDispensed = false;
+      saveAll();
+      alert("✅ Prescription updated & re-sent to Pharmacy!");
+    }
+
+    function deletePatient(id) {
+      if (confirm("Delete this patient record?")) {
+        patientStore = patientStore.filter(x => x.id !== id);
+        saveAll();
+      }
+    }
+
+    function dispenseMedicine(id) {
+      const p = patientStore.find(x => x.id === id);
+      if (!p) return;
+      p.pharmaDispensed = true;
+      saveAll();
+      alert(`Medicines for ${p.name} marked as Dispensed!`);
+    }
+
+    function openPaymentModal(id) {
+      const p = patientStore.find(x => x.id === id);
+      if (!p) return;
+      payingPatientId = id;
+
+      document.getElementById("qrPatName").innerText = `Patient: ${p.name} | Bed: ${p.bed}`;
+      document.getElementById("qrAmount").innerText = `₹${p.bill}`;
+      
+      const upiUrl = `upi://pay?pa=hospitalcare@upi&pn=CityHospital&am=${p.bill}&cu=INR`;
+      document.getElementById("qrImg").src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+
+      document.getElementById("qrModal").style.display = "flex";
+    }
+
+    function closePaymentModal() {
+      document.getElementById("qrModal").style.display = "none";
+      payingPatientId = null;
+    }
+
+    function confirmPaymentDone() {
+      if (!payingPatientId) return;
+      const p = patientStore.find(x => x.id === payingPatientId);
+      if (p) {
+        p.billPaid = true;
+        saveAll();
+        alert(`Payment received for ${p.name}!`);
+      }
+      closePaymentModal();
+    }
+
+    function printBill(id) {
+      const p = patientStore.find(x => x.id === id);
+      if (!p) return;
+      const w = window.open("", "_blank");
+      w.document.write(`<h2>City Care Hospital Receipt</h2><p><strong>Patient:</strong> ${p.name}</p><p><strong>Doctor:</strong> ${p.doctor} | <strong>Nurse:</strong> ${p.nurse}</p><p><strong>Bed:</strong> ${p.bed}</p><p><strong>Total Bill:</strong> ₹${p.bill} (${p.billPaid ? "PAID" : "UNPAID"})</p><p><strong>Prescription:</strong><br>${p.rx.replace(/\n/g, "<br>")}</p><script>window.print();<\/script>`);
+      w.document.close();
+    }
+
+    function findPatientBill() {
+      const q = (document.getElementById("patLookup")?.value || "").toLowerCase().trim();
+      const box = document.getElementById("patientResult");
+      if (!box) return;
+
+      let list = patientStore;
+      if (q) {
+        list = patientStore.filter(x => x.phone.includes(q) || x.name.toLowerCase().includes(q));
+      }
+
+      if (list.length === 0) {
+        box.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No records found. Enter mobile number.</div>';
+        return;
+      }
+
+      box.innerHTML = list.map(p => `
+        <div class="pat-card" style="margin-bottom:12px;">
+          <div class="pat-head">
+            <h4>${p.name} (${p.age}y, ${p.gender})</h4>
+            <span class="badge-status" style="background:${p.billPaid ? 'var(--success)' : 'var(--danger)'}; color:#000;">
+              ${p.billPaid ? "BILL PAID" : "PAYMENT PENDING"}
+            </span>
+          </div>
+          <div class="staff-badge-row">
+            <span class="staff-tag">👨‍⚕️ ${p.doctor}</span>
+            <span class="staff-tag">👩‍⚕️ ${p.nurse}</span>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Bed: ${p.bed}</p>
+          <div style="background:#0c1429; padding:10px; border-radius:6px; margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
+            <div>Hospital Bill Amount: <strong style="font-size:1.2rem; color:#fff;">₹${p.bill}</strong></div>
+            ${!p.billPaid ? `<button class="btn-sub pay" onclick="openPaymentModal(${p.id})">Pay Online (UPI)</button>` : `<button class="btn-sub" onclick="printBill(${p.id})">Print Bill</button>`}
+          </div>
+          <div class="rx-box">
+            <strong>Prescribed Medicines:</strong>
+            <pre>${p.rx}</pre>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPharmaQueue() {
+      const box = document.getElementById("pharmaCards");
+      const q = (document.getElementById("pharmaSearch")?.value || "").toLowerCase().trim();
+      if (!box) return;
+
+      const list = patientStore.filter(x => {
+        const match = !q || x.name.toLowerCase().includes(q) || x.bed.toLowerCase().includes(q) || x.doctor.toLowerCase().includes(q);
+        return match && !x.pharmaDispensed;
+      });
+
+      if (list.length === 0) {
+        box.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No pending prescriptions in queue.</div>';
+        return;
+      }
+
+      box.innerHTML = list.map(p => `
+        <div class="pat-card" style="border-left-color: var(--warning);">
+          <div class="pat-head">
+            <h4>${p.name} - ${p.bed}</h4>
+            <span class="badge-status" style="background:var(--warning); color:#000;">Rx Pending</span>
+          </div>
+          <div class="staff-badge-row">
+            <span class="staff-tag">👨‍⚕️ ${p.doctor}</span>
+            <span class="staff-tag">👩‍⚕️ ${p.nurse}</span>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Contact: ${p.phone}</p>
+          <div class="rx-box">
+            <strong>℞ Medicines to Dispense:</strong>
+            <pre>${p.rx}</pre>
+          </div>
+          <div class="btn-row">
+            <button class="btn-sub" style="background:var(--success); color:#000;" onclick="dispenseMedicine(${p.id})">Hand Over Medicines</button>
+            <button class="btn-sub" onclick="printBill(${p.id})">Print Slip</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderWard(filterQuery = "") {
+      const box = document.getElementById("wardCards");
+      if (!box) return;
+
+      const list = patientStore.filter(x => {
+        return !filterQuery || 
+          x.name.toLowerCase().includes(filterQuery) ||
+          x.bed.toLowerCase().includes(filterQuery) ||
+          x.doctor.toLowerCase().includes(filterQuery) ||
+          x.nurse.toLowerCase().includes(filterQuery) ||
+          x.phone.includes(filterQuery);
+      });
+
+      if (list.length === 0) {
+        box.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No matching patients found.</div>';
+        return;
+      }
+
+      box.innerHTML = list.map(p => `
+        <div class="pat-card ${p.status}">
+          <button class="btn-sub del" onclick="deletePatient(${p.id})">✕ Delete</button>
+          <div class="pat-head" style="padding-right: 60px;">
+            <h4>${p.name} (${p.age}y)</h4>
+            <span class="badge-status">${p.status}</span>
+          </div>
+
+          <div class="staff-badge-row">
+            <span class="staff-tag">👨‍⚕️ ${p.doctor}</span>
+            <span class="staff-tag">👩‍⚕️ ${p.nurse}</span>
+          </div>
+
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+            Bed: <strong style="color:var(--primary);">${p.bed}</strong> | Phone: <strong>${p.phone}</strong>
+          </p>
+
+          <div class="vitals-row">
+            <span>BP: <strong>${p.bp}</strong></span>
+            <span>Pulse: <strong>${p.pulse}</strong></span>
+            <span>SpO2: <strong>${p.spo2}</strong></span>
+          </div>
+
+          <p style="font-size:0.82rem; margin:4px 0;">Diagnosis: <strong>${p.diag}</strong></p>
+
+          <div class="rx-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>℞ Medicines:</strong>
+              <span style="font-size:0.75rem; color:${p.pharmaDispensed ? 'var(--success)' : 'var(--warning)'}; font-weight:700;">
+                Pharmacy: ${p.pharmaDispensed ? "Dispensed" : "Pending"}
+              </span>
+            </div>
+            <pre>${p.rx}</pre>
+          </div>
+
+          <div class="inline-rx-form" id="rxForm-${p.id}">
+            <label style="font-size:0.75rem; color:var(--text-muted);">Update Prescriptions (Each in a line):</label>
+            <textarea id="inpRx-${p.id}" style="height:70px; margin:4px 0;">${p.rx}</textarea>
+            <button class="btn-main" style="padding:6px; font-size:0.8rem;" onclick="saveInlineRx(${p.id})">Save & Update Pharmacy</button>
+          </div>
+
+          <div style="font-size:0.8rem; margin-top:4px;">
+            Bill: <strong>₹${p.bill}</strong> (${p.billPaid ? '<span style="color:var(--success)">Paid</span>' : '<span style="color:var(--danger)">Unpaid</span>'})
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-sub rx" onclick="toggleInlineRx(${p.id})">✏ Edit Prescription</button>
+            <button class="btn-sub pay" onclick="openPaymentModal(${p.id})">UPI Pay</button>
+            <button class="btn-sub" onclick="printBill(${p.id})">Print</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderDashboard() {
+      document.getElementById("mTotal").innerText = patientStore.length;
+      document.getElementById("mActive").innerText = patientStore.filter(x => x.status === "Ongoing").length;
+      document.getElementById("mCrit").innerText = patientStore.filter(x => x.status === "Critical").length;
+      document.getElementById("mDisc").innerText = patientStore.filter(x => x.status === "Recovered").length;
+      document.getElementById("mStaff").innerText = staffStore.length;
+
+      const waitingTokens = tokenStore.filter(t => t.status === "Waiting").length;
+      document.getElementById("mTokens").innerText = waitingTokens;
+      document.getElementById("cActiveTokens").innerText = waitingTokens;
+
+      const pendingPharma = patientStore.filter(x => !x.pharmaDispensed).length;
+      document.getElementById("cPharmaQueue").innerText = pendingPharma;
+
+      renderWard();
+      renderPharmaQueue();
+      renderTokenQueue();
+      renderStaffTable();
+    }
+
+    // Startup Execution
+    initStore();
+  </script>
+</body>
+</html>
