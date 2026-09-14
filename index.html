@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediTrack Pro - Patient Health and Treatment Tracking System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=6.0">
+</head>
+<body>
+
+  <!-- Top Clinical Header with Duty Switcher -->
+  <header>
+    <div class="logo">
+      <i class="fa-solid fa-heart-pulse"></i>
+      <div>Medi<span>Track</span> Pro</div>
+    </div>
+
+    <!-- Active Duty Selector (No Password/Login Needed) -->
+    <div class="duty-switcher">
+      <div class="selector-group">
+        <label><i class="fa-solid fa-user-doctor"></i> Attending Doctor:</label>
+        <select id="activeDoctor" onchange="handleDutyChange()">
+          <option value="Dr. Arvind (Cardiology)">Dr. Arvind - Cardiology</option>
+          <option value="Dr. Priya (General Medicine)">Dr. Priya - General Medicine</option>
+          <option value="Dr. Suresh (Orthopedics)">Dr. Suresh - Orthopedics</option>
+          <option value="Dr. Deepa (Pediatrics)">Dr. Deepa - Pediatrics</option>
+          <option value="Dr. Rajesh (Pulmonology)">Dr. Rajesh - Pulmonology</option>
+        </select>
+      </div>
+
+      <div class="selector-group">
+        <label><i class="fa-solid fa-user-nurse"></i> Assigned Nurse:</label>
+        <select id="activeNurse" onchange="handleDutyChange()">
+          <option value="Nurse Anita (ICU)">Nurse Anita (ICU Care)</option>
+          <option value="Nurse Saranya (General Ward)">Nurse Saranya (General Ward)</option>
+          <option value="Nurse Kavya (Emergency)">Nurse Kavya (Emergency Triage)</option>
+          <option value="Nurse Malar (Post-Op Care)">Nurse Malar (Post-Op Care)</option>
+        </select>
+      </div>
+
+      <div class="duty-mode-toggle">
+        <button type="button" class="duty-btn active" id="btnRoleDoctor" onclick="switchRoleView('Doctor')">
+          <i class="fa-solid fa-stethoscope"></i> Doctor View
+        </button>
+        <button type="button" class="duty-btn" id="btnRoleNurse" onclick="switchRoleView('Nurse')">
+          <i class="fa-solid fa-hand-holding-medical"></i> Nurse View
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Urgent Clinical Alert Bar -->
+  <div class="alert-bar" id="alertBar">
+    <div class="alert-content">
+      <i class="fa-solid fa-bell alert-bell"></i>
+      <span id="alertMessage">Initializing Clinical Status...</span>
+    </div>
+    <button class="alert-refresh-btn" onclick="checkClinicalAlerts()" title="Check Real-Time Vitals">
+      <i class="fa-solid fa-arrows-rotate"></i> Sync Alerts
+    </button>
+  </div>
+
+  <!-- Main System App -->
+  <main class="container">
+    <!-- Quick Metrics Counters -->
+    <div class="stats-container">
+      <div class="stat-card">
+        <i class="fa-solid fa-hospital-user stat-icon"></i>
+        <div><h3 id="cTotal">0</h3><p>Total Patients</p></div>
+      </div>
+      <div class="stat-card yellow">
+        <i class="fa-solid fa-bed-pulse stat-icon"></i>
+        <div><h3 id="cActive">0</h3><p>Under Treatment</p></div>
+      </div>
+      <div class="stat-card red">
+        <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
+        <div><h3 id="cCritical">0</h3><p>Critical Priority</p></div>
+      </div>
+      <div class="stat-card green">
+        <i class="fa-solid fa-house-chimney-medical stat-icon"></i>
+        <div><h3 id="cDischarged">0</h3><p>Discharged</p></div>
+      </div>
+    </div>
+
+    <div class="grid-layout">
+      <!-- Left: Patient Admission / Prescription Form -->
+      <div class="card">
+        <h2><i class="fa-solid fa-file-waveform"></i> Patient Admission & Care Entry</h2>
+        <form onsubmit="createPatient(event)">
+          <div class="form-group">
+            <label>Patient Full Name *</label>
+            <input type="text" id="name" required placeholder="e.g. Ramesh Kumar">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Age *</label>
+              <input type="number" id="age" required placeholder="Years">
+            </div>
+            <div class="form-group">
+              <label>Gender</label>
+              <select id="gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Blood Group</label>
+              <select id="blood">
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Emergency Contact *</label>
+              <input type="tel" id="phone" required placeholder="Mobile Number">
+            </div>
+          </div>
+
+          <!-- Ward Selection & Nurse Assignment -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Ward / Bed Allocation *</label>
+              <input type="text" id="bed" required placeholder="e.g. ICU-02 or Ward 3 - Bed 08">
+            </div>
+            <div class="form-group">
+              <label>Care Assigned Nurse *</label>
+              <select id="pAssignedNurse">
+                <option value="Nurse Anita (ICU)">Nurse Anita (ICU Care)</option>
+                <option value="Nurse Saranya (General Ward)">Nurse Saranya (General Ward)</option>
+                <option value="Nurse Kavya (Emergency)">Nurse Kavya (Emergency)</option>
+                <option value="Nurse Malar (Post-Op Care)">Nurse Malar (Post-Op)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Clinical Vitals -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>BP (mmHg)</label>
+              <input type="text" id="vBp" placeholder="120/80">
+            </div>
+            <div class="form-group">
+              <label>Pulse (bpm)</label>
+              <input type="number" id="vPulse" placeholder="78">
+            </div>
+            <div class="form-group">
+              <label>SpO2 (%)</label>
+              <input type="number" id="vSpo2" placeholder="98">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Diagnosis / Clinical Complaint *</label>
+            <input type="text" id="diagnosis" required placeholder="e.g. Acute Coronary Syndrome, Diabetes">
+          </div>
+
+          <div class="form-group">
+            <label>Prescribed Medication & Doctor Orders *</label>
+            <textarea id="treatment" required placeholder="Dosage, IV fluids, and nursing care instructions..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Admission Status</label>
+            <select id="status">
+              <option value="Ongoing">Under Treatment (Ongoing)</option>
+              <option value="Critical">Critical Priority</option>
+              <option value="Recovered">Recovered / Normal</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Next Doctor Round Date</label>
+            <input type="date" id="date">
+          </div>
+
+          <button type="submit" class="btn-submit"><i class="fa-solid fa-circle-plus"></i> Save Patient File</button>
+        </form>
+      </div>
+
+      <!-- Right: Live Clinical Roster -->
+      <div class="card">
+        <div class="roster-header">
+          <h2><i class="fa-solid fa-clipboard-list"></i> Clinical Records & Nursing Tracker</h2>
+          <div class="nurse-filter-tab">
+            <button type="button" class="filter-pill active" id="filterAll" onclick="filterByNurse('all')">All Patients</button>
+            <button type="button" class="filter-pill" id="filterMine" onclick="filterByNurse('mine')">My Ward Patients Only</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="search" placeholder="🔍 Search patient name, bed, diagnosis, nurse..." oninput="filterData()">
+        </div>
+
+        <div id="patientList" class="patient-grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>🩺 MediTrack Pro - Clinical Health and Treatment Tracking System</p>
+  </footer>
+
+  <script src="script.js?v=6.0"></script>
+</body>
+</html>
